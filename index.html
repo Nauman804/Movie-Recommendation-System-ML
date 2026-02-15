@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 CineMatch - Movie Recommendation Engine</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js CDN for 3D hero animation -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Additional 3D Effects Library -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+</head>
+<body>
+    <!-- 3D Background Canvas -->
+    <div id="background-canvas" class="background-canvas"></div>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <span class="logo-icon">🎬</span>
+                <h1>CineMatch</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="active" data-section="recommend">Discover</a></li>
+                <li><a href="#" data-section="search">Browse</a></li>
+                <li><a href="#" data-section="stats">Statistics</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section (3D Canvas) -->
+    <section class="hero">
+        <div id="hero-3d" class="hero-3d"></div>
+        <div class="container hero-content">
+            <div class="hero-text">
+                <h2>Find Your Next Favorite Movie</h2>
+                <p>Discover movies based on genre, ratings, and similarity to films you love</p>
+            </div>
+            <div class="background-blobs" aria-hidden>
+                <span class="blob b1"></span>
+                <span class="blob b2"></span>
+            </div>
+            <div class="hero-illustration" aria-hidden>
+                <div class="film-reel" id="fallback-illustration"></div>
+            </div>
+        </div>
+        <div class="credit-overlay">This project is designed by Noman Gokboru</div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Recommendation Section -->
+            <section id="recommend" class="section active">
+                <h2 class="section-title">🎯 Find Similar Movies</h2>
+                <div class="search-box-container">
+                    <div class="search-box">
+                        <input 
+                            type="text" 
+                            id="movieInput" 
+                            placeholder="Search for a movie... (e.g., Oppenheimer, Barbie, Inception)"
+                            class="search-input"
+                        >
+                        <button class="search-btn" onclick="getRecommendations()">
+                            <span>Search</span>
+                            <span class="loader"></span>
+                        </button>
+                    </div>
+                    <div id="suggestions" class="suggestions"></div>
+                </div>
+
+                <div id="recommend-results" class="results-container hidden">
+                    <div class="movie-info-card">
+                        <div class="movie-poster">🎬</div>
+                        <div class="movie-details">
+                            <h3 id="queryMovieTitle"></h3>
+                            <p id="queryMovieGenre"></p>
+                            <div class="movie-stats">
+                                <span>⭐ <span id="queryMovieRating">-</span>/10</span>
+                                <span>👁️ <span id="queryMovieVotes">-</span> votes</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recommendations grid">
+                        <div class="grid-header">
+                            <h3>Similar Movies</h3>
+                        </div>
+                        <div id="recommendations-list" class="recommendations-list"></div>
+                    </div>
+                </div>
+
+                <div id="no-results" class="no-results hidden">
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <p>No movie found. Try a different title!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search Section -->
+            <section id="search" class="section hidden">
+                <h2 class="section-title">📚 Browse by Genre</h2>
+                <div class="search-box-container">
+                    <div class="search-box">
+                        <select id="genreFilter" class="search-input">
+                            <option value="Drama">Drama</option>
+                            <option value="Action">Action</option>
+                            <option value="Comedy">Comedy</option>
+                            <option value="thriller">Thriller</option>
+                            <option value="Adventure">Adventure</option>
+                            <option value="Horror">Horror</option>
+                            <option value="Romance">Romance</option>
+                            <option value="Fantasy">Fantasy</option>
+                            <option value="Sci-Fi">Sci-Fi</option>
+                        </select>
+                        <button class="search-btn" onclick="searchByGenre()">
+                            <span>Search</span>
+                            <span class="loader"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="search-results" class="results-container hidden">
+                    <div class="results-header">
+                        <h3 id="search-count"></h3>
+                    </div>
+                    <div id="search-list" class="movies-grid"></div>
+                </div>
+
+                <div id="search-no-results" class="no-results hidden">
+                    <div class="empty-state">
+                        <div class="empty-icon">🎭</div>
+                        <p>No movies found in this genre.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section id="stats" class="section hidden">
+                <h2 class="section-title">📊 Database Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-movies">-</div>
+                        <div class="stat-label">Total Movies</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="avg-rating">-</div>
+                        <div class="stat-label">Avg Rating</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="avg-votes">-</div>
+                        <div class="stat-label">Avg Votes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="rating-range">-</div>
+                        <div class="stat-label">Rating Range</div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-placeholder">
+                        <div class="chart-icon">📈</div>
+                        <p>Statistics loaded from the database</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 CineMatch - Powered by AI Recommendations</p>
+            <p class="tech-stack">Built with Flask API, TF-IDF, and Cosine Similarity</p>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
